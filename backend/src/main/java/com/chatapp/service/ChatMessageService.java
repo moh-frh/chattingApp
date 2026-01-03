@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Transactional
@@ -58,6 +59,30 @@ public class ChatMessageService {
                 .orElseThrow(() -> new RuntimeException("Message not found"));
         message.setIsRead(true);
         chatMessageRepository.save(message);
+    }
+
+    public void markConversationAsRead(Long userId1, Long userId2) {
+        User user1 = userService.findUserById(userId1);
+        User user2 = userService.findUserById(userId2);
+        
+        List<ChatMessage> unreadMessages = chatMessageRepository.findConversationBetweenUsers(user1, user2)
+                .stream()
+                .filter(msg -> msg.getReceiver().getId().equals(userId1) && !msg.getIsRead())
+                .collect(java.util.stream.Collectors.toList());
+        
+        for (ChatMessage message : unreadMessages) {
+            message.setIsRead(true);
+            chatMessageRepository.save(message);
+        }
+    }
+
+    public Long getUnreadCount(Long userId, Long senderId) {
+        User user = userService.findUserById(userId);
+        User sender = userService.findUserById(senderId);
+        List<ChatMessage> unreadMessages = chatMessageRepository.findUnreadMessagesForUser(user);
+        return unreadMessages.stream()
+                .filter(msg -> msg.getSender().getId().equals(senderId))
+                .count();
     }
 
     private ChatMessageResponse convertToResponse(ChatMessage message) {

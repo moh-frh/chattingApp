@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getAllUsers, getConversation, sendMessage } from '../services/chatService';
+import { getAllUsers, getConversation, sendMessage, markConversationAsRead, getUnreadCount } from '../services/chatService';
 import './Chat.css';
 
 const Chat = () => {
@@ -10,19 +10,36 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({});
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     loadUsers();
-  }, []);
+    loadUnreadCounts();
+    // Poll for unread counts every 3 seconds
+    const interval = setInterval(loadUnreadCounts, 3000);
+    return () => clearInterval(interval);
+  }, [users]);
 
   useEffect(() => {
     if (selectedUser) {
       loadConversation();
-      const interval = setInterval(loadConversation, 2000); // Poll every 2 seconds
+      // Mark conversation as read when viewing
+      markConversationAsRead(selectedUser.id);
+      const interval = setInterval(() => {
+        loadConversation();
+        markConversationAsRead(selectedUser.id);
+      }, 2000); // Poll every 2 seconds
       return () => clearInterval(interval);
     }
   }, [selectedUser]);
+
+  useEffect(() => {
+    // Update unread counts when messages change
+    if (selectedUser) {
+      loadUnreadCounts();
+    }
+  }, [messages]);
 
   useEffect(() => {
     scrollToBottom();
@@ -40,6 +57,23 @@ const Chat = () => {
       setUsers(otherUsers);
     } catch (error) {
       console.error('Error loading users:', error);
+    }
+  };
+
+  const loadUnreadCounts = async () => {
+    try {
+      const counts = {};
+      for (const u of users) {
+        try {
+          const count = await getUnreadCount(u.id);
+          counts[u.id] = count;
+        } catch (error) {
+          counts[u.id] = 0;
+        }
+      }
+      setUnreadCounts(counts);
+    } catch (error) {
+      console.error('Error loading unread counts:', error);
     }
   };
 
@@ -92,6 +126,9 @@ const Chat = () => {
                 <div className="user-name">{u.username}</div>
                 <div className="user-email">{u.email}</div>
               </div>
+              {unreadCounts[u.id] > 0 && (
+                <div className="unread-badge">{unreadCounts[u.id]}</div>
+              )}
             </div>
           ))}
         </div>
@@ -115,8 +152,19 @@ const Chat = () => {
                   className={`message ${message.senderId === user.id ? 'sent' : 'received'}`}
                 >
                   <div className="message-content">{message.content}</div>
-                  <div className="message-time">
-                    {new Date(message.createdAt).toLocaleTimeString()}
+                  <div className="message-footer">
+                    <div className="message-time">
+                      {new Date(message.createdAt).toLocaleTimeString()}
+                    </div>
+                    {message.senderId === user.id && (
+                      <div className="read-status">
+                        {message.isRead ? (
+                          <span className="read-icon" title="Seen">✓✓</span>
+                        ) : (
+                          <span className="sent-icon" title="Sent">✓</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

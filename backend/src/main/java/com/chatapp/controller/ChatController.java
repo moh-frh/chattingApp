@@ -75,6 +75,34 @@ public class ChatController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @PutMapping("/read-conversation/{userId}")
+    public ResponseEntity<Void> markConversationAsRead(@PathVariable Long userId) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            com.chatapp.model.User currentUser = userService.findByUsername(username);
+            
+            chatMessageService.markConversationAsRead(currentUser.getId(), userId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/unread-count/{userId}")
+    public ResponseEntity<Long> getUnreadCount(@PathVariable Long userId) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            com.chatapp.model.User currentUser = userService.findByUsername(username);
+            
+            Long count = chatMessageService.getUnreadCount(currentUser.getId(), userId);
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            return ResponseEntity.ok(0L);
+        }
+    }
 }
 
 

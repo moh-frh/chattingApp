@@ -28,4 +28,14 @@ export const markAsRead = async (messageId) => {
   return response.data;
 };
 
+export const markConversationAsRead = async (userId) => {
+  const response = await api.put(`/api/chat/read-conversation/${userId}`);
+  return response.data;
+};
+
+export const getUnreadCount = async (userId) => {
+  const response = await api.get(`/api/chat/unread-count/${userId}`);
+  return response.data;
+};
+
 
