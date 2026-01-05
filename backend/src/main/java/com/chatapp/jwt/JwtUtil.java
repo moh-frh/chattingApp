@@ -1,4 +1,4 @@
-package com.chatapp.util;
+package com.chatapp.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

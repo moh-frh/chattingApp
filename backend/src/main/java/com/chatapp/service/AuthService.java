@@ -4,7 +4,7 @@ import com.chatapp.dto.AuthResponse;
 import com.chatapp.dto.LoginRequest;
 import com.chatapp.dto.RegisterRequest;
 import com.chatapp.model.User;
-import com.chatapp.util.JwtUtil;
+import com.chatapp.jwt.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
